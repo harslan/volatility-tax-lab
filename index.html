@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Volatility Tax Lab — Impossible Systems · Episode 3</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="paper-grain" aria-hidden="true"></div>
+    <main class="shell">
+      <header class="hero">
+        <div class="eyebrow">IMPOSSIBLE SYSTEMS · EPISODE 3 COMPANION LAB</div>
+        <h1>The Volatility Tax Lab</h1>
+        <p class="subtitle">
+          Two portfolios can share the exact same <strong>+10% average return</strong> and end up
+          <strong>24.3× apart</strong> after 30 years—with zero leverage. Stress-test how wild swings
+          and daily leverage charge the squared compounding tax <code>(1 + x)(1 − x) = 1 − x²</code>.
+        </p>
+
+        <div class="preset-bar" role="group" aria-label="Episode 3 Quick Presets">
+          <button type="button" class="btn-preset btn-milo" id="btn-load-milo">
+            <span class="dot dot-coral"></span>
+            Load Milo (+60% / −40%)
+          </button>
+          <button type="button" class="btn-preset btn-pip" id="btn-load-pip">
+            <span class="dot dot-emerald"></span>
+            Load Pip (+25% / −5%)
+          </button>
+          <button type="button" class="btn-preset btn-lever" id="btn-load-3x">
+            <span class="dot dot-amber"></span>
+            3× Leveraged ETF Trap
+          </button>
+        </div>
+      </header>
+
+      <section class="grid-main">
+        <!-- CONTROLS PANEL -->
+        <aside class="card controls-card" aria-label="Simulation Controls">
+          <div class="card-header">
+            <h2>Portfolio Controls</h2>
+            <span class="mono-pill">SEED 303 · 1,000 RUNS</span>
+          </div>
+
+          <!-- Control 1: Annual Swing -->
+          <div class="control-group">
+            <div class="control-top">
+              <label for="swing-slider">1. Annual Swing (±x%)</label>
+              <output id="swing-val" class="mono-readout">±50%</output>
+            </div>
+            <div class="chip-row" id="swing-presets" role="group" aria-label="Annual Swing Presets">
+              <button type="button" class="chip" data-swing="15">15% Broad Index</button>
+              <button type="button" class="chip" data-swing="30">30% Tech Sector</button>
+              <button type="button" class="chip active" data-swing="50">50% Wild Stock</button>
+            </div>
+            <input type="range" id="swing-slider" min="5" max="70" step="1" value="50" />
+            <div class="range-scale"><span>±5% Calm</span><span>±35%</span><span>±70% Extreme</span></div>
+          </div>
+
+          <!-- Control 2: Average Annual Return -->
+          <div class="control-group">
+            <div class="control-top">
+              <label for="avg-slider">2. Average Annual Return</label>
+              <output id="avg-val" class="mono-readout">+10%</output>
+            </div>
+            <input type="range" id="avg-slider" min="4" max="16" step="0.5" value="10" />
+            <div class="range-scale"><span>+4%</span><span>+10% Default</span><span>+16%</span></div>
+          </div>
+
+          <!-- Control 3: Leverage Multiplier + Financing Drag -->
+          <div class="control-group">
+            <div class="control-top">
+              <label>3. Leverage Multiplier</label>
+              <output id="lev-val" class="mono-readout">1× Unleveraged</output>
+            </div>
+            <div class="seg-row" id="leverage-buttons" role="group" aria-label="Leverage Multiplier">
+              <button type="button" class="seg active" data-lev="1">1× Spot</button>
+              <button type="button" class="seg" data-lev="2">2× Daily ETF</button>
+              <button type="button" class="seg" data-lev="3">3× Daily ETF</button>
+            </div>
+
+            <div class="fee-box" id="fee-box">
+              <label class="toggle-row">
+                <input type="checkbox" id="fee-toggle" />
+                <span>Add realistic ETF fee / borrowing drag</span>
+              </label>
+              <div class="fee-slider-wrap" id="fee-slider-wrap">
+                <div class="control-top small">
+                  <label for="fee-slider">Annual Financing + Expense Drag</label>
+                  <output id="fee-val" class="mono-readout">2.0% / yr</output>
+                </div>
+                <input type="range" id="fee-slider" min="1" max="3" step="0.25" value="2" />
+              </div>
+            </div>
+          </div>
+
+          <div class="effective-box" id="effective-box">
+            <div class="eff-row">
+              <span>Good Year Return</span>
+              <strong id="eff-good" class="text-emerald">+60.0%</strong>
+            </div>
+            <div class="eff-row">
+              <span>Bad Year Return</span>
+              <strong id="eff-bad" class="text-coral">−40.0%</strong>
+            </div>
+            <div class="eff-row">
+              <span>2-Year Balanced Cycle</span>
+              <strong id="eff-cycle" class="text-coral">−4.00%</strong>
+            </div>
+          </div>
+        </aside>
+
+        <!-- OUTPUTS & VISUALIZATION PANEL -->
+        <section class="outputs-col">
+          <!-- KPI Strip -->
+          <div class="kpi-grid">
+            <article class="kpi-card">
+              <div class="kpi-label">Headline Average</div>
+              <div class="kpi-value" id="kpi-headline">+10.0%</div>
+              <div class="kpi-sub" id="kpi-headline-sub">Arithmetic mean / yr</div>
+            </article>
+
+            <article class="kpi-card kpi-highlight" id="kpi-cagr-card">
+              <div class="kpi-label">Actual Compound (CAGR)</div>
+              <div class="kpi-value" id="kpi-cagr">−2.02%</div>
+              <div class="kpi-sub" id="kpi-drag-sub">−12.02% / yr volatility drag</div>
+            </article>
+
+            <article class="kpi-card">
+              <div class="kpi-label">30-Yr Balanced Wealth</div>
+              <div class="kpi-value" id="kpi-wealth">$5,421</div>
+              <div class="kpi-sub" id="kpi-wealth-sub">From $10,000 (15 good / 15 bad)</div>
+            </article>
+
+            <article class="kpi-card">
+              <div class="kpi-label">Timelines Finishing Down</div>
+              <div class="kpi-value" id="kpi-down">58.6%</div>
+              <div class="kpi-sub" id="kpi-down-sub">586 / 1,000 runs (theory 57.2%)</div>
+            </article>
+          </div>
+
+          <!-- 30-Year Trajectory Chart -->
+          <article class="card chart-card">
+            <div class="card-header">
+              <div>
+                <h2>30-Year Growth Fan (1,000 Deterministic Runs)</h2>
+                <p class="card-note">
+                  Bold curve = balanced 15 good / 15 bad path · Thin fan = 24 quantile timelines · Dashed line = $10,000 start
+                </p>
+              </div>
+              <div class="chart-legend">
+                <span class="leg-item"><i class="swatch swatch-active"></i>Your Portfolio</span>
+                <span class="leg-item"><i class="swatch swatch-pip"></i>Pip Benchmark ($131,675)</span>
+              </div>
+            </div>
+            <div class="chart-wrap">
+              <svg id="trajectory-svg" viewBox="0 0 760 320" role="img" aria-label="30-year portfolio wealth trajectories"></svg>
+            </div>
+            <div class="chart-footer" id="chart-footer"></div>
+          </article>
+
+          <!-- Squared Tax + Break-Even Climb Side by Side -->
+          <div class="bottom-grid">
+            <article class="card">
+              <div class="card-header">
+                <h2>Squared Volatility Tax</h2>
+                <span class="mono-pill">(1+x)(1−x) = 1−x²</span>
+              </div>
+              <div id="squared-tax-list" class="tax-list"></div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <h2>Interactive Break-Even Climb</h2>
+                <output id="be-readout" class="mono-pill">−50% → +100%</output>
+              </div>
+              <p class="card-note">A drop shrinks your base, so recovery requires a steeper climb:</p>
+              <div class="be-controls">
+                <input type="range" id="be-slider" min="5" max="90" step="5" value="50" />
+                <div class="chip-row small" id="be-presets">
+                  <button type="button" class="chip" data-drop="20">−20% → +25%</button>
+                  <button type="button" class="chip active" data-drop="50">−50% → +100%</button>
+                  <button type="button" class="chip" data-drop="80">−80% → +400%</button>
+                </div>
+              </div>
+              <div class="be-bars" id="be-bars"></div>
+            </article>
+          </div>
+        </section>
+      </section>
+
+      <footer class="footer">
+        <p>
+          Powered directly by <code>episodes/volatility-tax-stocks/math-engine.mjs</code> (Mulberry32 seed 303) —
+          identical deterministic math to the Episode 3 YouTube Short.
+        </p>
+        <p class="tagline">Average return is the headline. Compound growth is what you keep.</p>
+      </footer>
+    </main>
+
+    <script type="module" src="./app.mjs"></script>
+  </body>
+</html>
